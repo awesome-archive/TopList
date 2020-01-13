@@ -1,7 +1,7 @@
 package Common
 
 import (
-	"../Config"
+	"github.com/tophubs/TopList/Config"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	//"time"
 )
 
 var DbPool *sync.Pool
@@ -29,13 +28,15 @@ type MySql struct {
 	conn        *sql.DB // 数据库连接
 }
 
+type MysqlCfg struct {
+	Source, Driver string
+}
+
 // 初始化连接池
 func init() {
 	MySql := MySql{}
-	var cfg Config.Config
-	cfg = new(Config.Mysql)
-	MySql.source = cfg.GetConfig()["source"].(string)
-	MySql.driver = cfg.GetConfig()["driver"].(string)
+	MySql.source = Config.MySql().Source
+	MySql.driver = Config.MySql().Driver
 	db, err := sql.Open(MySql.driver, MySql.source)
 	db.SetMaxOpenConns(2000)             // 最大链接
 	db.SetMaxIdleConns(1000)             // 空闲连接，也就是连接池里面的数量
@@ -81,11 +82,7 @@ func (MySql *MySql) Close() error {
 */
 func (MySql *MySql) Select(tableName string, field []string) *MySql {
 	var allField string
-	for _, x := range field {
-		allField += x + ","
-	}
-	// 删除所以字段最后一个,
-	allField = strings.TrimSuffix(allField, ",")
+	allField = strings.Join(field, ",")
 	MySql.fields = "select " + allField + " from " + tableName
 	MySql.tableName = tableName
 	return MySql
